@@ -44,7 +44,8 @@ retriever_tool2 = create_retriever_tool(retriever = retriever2,
 
 vectorstore3 = Chroma(persist_directory=r"backend\Embeddings\tool3",
                      embedding_function=GoogleGenerativeAIEmbeddings(
-                     model="models/text-embedding-004"))
+                     model="models/text-embedding-004",
+                     google_api_key="AIzaSyBgdymDNQMdnSEad-xYapzh1hS3F6wmxfE"))
 
 retriever3 = vectorstore3.as_retriever(search_type = "mmr",
                                      search_kwargs = {'k' : 3, 'lambda_mult' : 0.7})
@@ -59,7 +60,8 @@ retriever_tool3 = create_retriever_tool(retriever = retriever3,
 
 vectorstore4 = Chroma(persist_directory=r"backend\Embeddings\tool4",
                      embedding_function=GoogleGenerativeAIEmbeddings(
-                     model="models/text-embedding-004"))
+                     model="models/text-embedding-004",
+                     google_api_key="AIzaSyBgdymDNQMdnSEad-xYapzh1hS3F6wmxfE"))
 
 retriever4 = vectorstore4.as_retriever(search_type = "mmr",
                                      search_kwargs = {'k' : 3, 'lambda_mult' : 0.7})
@@ -74,7 +76,8 @@ retriever_tool4 = create_retriever_tool(retriever = retriever4,
 
 vectorstore5 = Chroma(persist_directory=r"backend\Embeddings\tool5",
                      embedding_function=GoogleGenerativeAIEmbeddings(
-                     model="models/text-embedding-004"))
+                     model="models/text-embedding-004",
+                     google_api_key="AIzaSyBgdymDNQMdnSEad-xYapzh1hS3F6wmxfE"))
 
 retriever5 = vectorstore5.as_retriever(search_type = "mmr",
                                      search_kwargs = {'k' : 3, 'lambda_mult' : 0.7})
@@ -89,7 +92,8 @@ retriever_tool5 = create_retriever_tool(retriever = retriever5,
 
 vectorstore6 = Chroma(persist_directory=r"backend\Embeddings\tool6",
                      embedding_function=GoogleGenerativeAIEmbeddings(
-                     model="models/text-embedding-004"))
+                     model="models/text-embedding-004",
+                     google_api_key="AIzaSyBgdymDNQMdnSEad-xYapzh1hS3F6wmxfE"))
 
 retriever6 = vectorstore6.as_retriever(search_type = "mmr",
                                      search_kwargs = {'k' : 3, 'lambda_mult' : 0.7})
@@ -107,7 +111,8 @@ retriever_tool6 = create_retriever_tool(retriever = retriever6,
 
 
 #Direct Gemini Tool                                                                     # tool 2
-chat = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
+chat = ChatGoogleGenerativeAI(model="gemini-1.5-pro",
+                              google_api_key="AIzaSyBgdymDNQMdnSEad-xYapzh1hS3F6wmxfE")
 @tool
 def direct_llm_answer(query: str) -> str:
 
