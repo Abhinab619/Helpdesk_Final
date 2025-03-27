@@ -29,7 +29,8 @@ class Message(BaseModel):
 
 vectorstore2 = Chroma(persist_directory=r"backend\Embeddings\tool2",
                      embedding_function=GoogleGenerativeAIEmbeddings(
-                     model="models/text-embedding-004"))
+                     model="models/text-embedding-004",
+                     google_api_key="AIzaSyBgdymDNQMdnSEad-xYapzh1hS3F6wmxfE"))
 
 retriever2 = vectorstore2.as_retriever(search_type = "mmr",
                                      search_kwargs = {'k' : 3, 'lambda_mult' : 0.7})
