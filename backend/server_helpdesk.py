@@ -181,3 +181,20 @@ def chat_with_model(msg: Message):
         "response": response.get("output", "No response generated"),
         "intermediate_steps": response.get("intermediate_steps", [])
     }
+
+
+
+
+# Version 0.1 (User SPECIFIC basic session )
+
+# User-specific memory (user_memories)
+# ---A dictionary user_memories is used to store conversation memory for each user_id.
+# ---The dictionary connected_users tracks when a user was first seen, last active, and their total messages.
+
+
+# Also User ID is assigned manually here in this code, from the frontend,
+# which can cause conflicts(if name is same)
+
+
+
+# Version 0.2 will focus on Automatic user Handling, while maintaining some temporary storage
