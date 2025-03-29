@@ -133,7 +133,7 @@ def get_user_memory(user_id: str):
             "last_active" : now,
             "total_messages" : 0
         }
-        return user_memories[user_id]
+        return user_memories.get(user_id)
 
 @app.post("/chat")
 def chat_with_model(msg: Message):
