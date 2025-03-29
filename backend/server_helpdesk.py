@@ -10,7 +10,30 @@ from langchain import hub
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 import os
 from langchain.memory import ConversationSummaryMemory      # Adding Memory for context Retention
-from datetime import datetime
+from datetime import datetime,timedelta
+
+
+
+INACTIVITY_TIMEOUT = timedelta(minutes=5)  # Set timeout for removing inactive users
+
+def remove_inactive_users():
+    now = datetime.now()
+    inactive_users = [user_id for user_id, details in connected_users.items()
+                      if now - datetime.strptime(details["last_active"], "%Y-%m-%d %H:%M:%S") > INACTIVITY_TIMEOUT]
+    
+    for user_id in inactive_users:
+        del connected_users[user_id]
+        if user_id in user_memories:
+            del user_memories[user_id]  # Remove memory for inactive users
+        print(f"Removed inactive user: {user_id}")
+
+
+
+import uuid
+
+def generate_user_id():
+    return str(uuid.uuid4())  # Generates a unique user_id
+
 
 app = FastAPI()
 
@@ -142,6 +165,17 @@ def get_user_memory(user_id: str):
 
 @app.post("/chat")
 def chat_with_model(msg: Message):
+    remove_inactive_users()
+    user_id = msg.user_id.strip() if msg.user_id else generate_user_id()
+
+    if user_id not in connected_users:  # New user check
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        connected_users[user_id] = {
+            "first_seen": now,
+            "last_active": now,
+            "total_messages": 0
+        }
+
     user_data = get_user_memory(msg.user_id)
     memory = user_data["memory"]
     interaction_count = user_data["interaction_count"]
@@ -173,11 +207,12 @@ def chat_with_model(msg: Message):
 
     # Print logs of all connected users
     print("\n--- Connected Users Log ---")
-    for user_id, details in connected_users.items():
-        print(f"User ID: {user_id}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
+    for uid, details in connected_users.items():
+        print(f"User ID: {uid}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
     print("---------------------------\n")
     
     return {
+        "user_id" : user_id,
         "response": response.get("output", "No response generated"),
         "intermediate_steps": response.get("intermediate_steps", [])
     }
@@ -185,16 +220,25 @@ def chat_with_model(msg: Message):
 
 
 
-# Version 0.1 (User SPECIFIC basic session )
+# Version 0.2
 
-# User-specific memory (user_memories)
-# ---A dictionary user_memories is used to store conversation memory for each user_id.
-# ---The dictionary connected_users tracks when a user was first seen, last active, and their total messages.
+""" Frontend Chnages:
 
 
-# Also User ID is assigned manually here in this code, from the frontend,
-# which can cause conflicts(if name is same)
+Uses localStorage to persist user_id.
+
+Sends an empty user_id initially, letting the backend generate it.
+
+Stores the backend-generated user_id to avoid conflicts."""
 
 
+#The frontend (React) checks for a stored user_id. If none exists, it sends null(enpty string) to the backend.
 
-# Version 0.2 will focus on Automatic user Handling, while maintaining some temporary storage
+#The backend (FastAPI) either assigns a new user_id (if it's a new user) or uses the existing one.
+
+#This user_id helps maintain conversation memory for personalized responses.
+
+#The backend removes inactive users after 5 minutes of inactivity.
+
+
+# see user handling page for more details
