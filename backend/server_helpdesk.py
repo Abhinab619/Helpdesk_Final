@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI 
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_community.vectorstores import Chroma
@@ -9,6 +9,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain import hub
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 import os
+from langchain.memory import ConversationSummaryMemory      # Adding Memory for context Retention
+
+from datetime import datetime
 
 app = FastAPI()
 
@@ -24,6 +27,7 @@ app.add_middleware(
 # Model to receive messages from frontend
 class Message(BaseModel):
     text: str
+    user_id : str
 
 # Absolute paths for embedding storage
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -94,9 +98,8 @@ def direct_llm_answer(query: str) -> str:
     response = chat.invoke(query)
     return response
 
-# Adding a memory for context retention
-from langchain.memory import ConversationSummaryMemory
-memory = ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True)
+
+
 
 tools = [retriever_tool2, retriever_tool3, retriever_tool4, retriever_tool5, retriever_tool6, direct_llm_answer]
 
@@ -105,31 +108,70 @@ chat_prompt_template = hub.pull("hwchase17/openai-tools-agent")
 # Create tool-calling agent
 agent = create_tool_calling_agent(llm=chat, tools=tools, prompt=chat_prompt_template)
 
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, return_intermediate_steps=True, memory=memory)
 
-interaction_count = 0
+
+# User specific memory storgae
+
+user_memories = {}
+connected_users = {}    # store user details
+
+
 MAX_MEMORY_SIZE = 5  # Clear memory after 5 interactions
+
+
+
+def get_user_memory(user_id: str):
+    if user_id not in user_memories:
+        user_memories[user_id] = {
+            "memory" : ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
+            "interaction_count" : 0
+        }
+        # Logging User connection
+
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        connected_users[user_id] = {
+            "first_seen" : now,
+            "last_active" : now,
+            "total_messages" : 0
+        }
+        return user_memories[user_id]
 
 @app.post("/chat")
 def chat_with_model(msg: Message):
-    global interaction_count, memory, agent_executor  # Ensure we can modify memory
+    user_data = get_user_memory(msg.user_id)
+    memory = user_data["memory"]
+    interaction_count = user_data["interaction_count"]
+
+    # Updating Userlog activity
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    connected_users[msg.user_id]["last_active"] = now
+    connected_users[msg.user_id]["total_messages"] += 1
     
     # Reset memory if it gets too large
     if interaction_count >= MAX_MEMORY_SIZE:
-        print('Memory Reset')
+        print(f'Memory Reset for {msg.user_id}')
         memory.clear()  # Clears stored history
-        memory = ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True)  # Reinitialize memory
-        agent_executor = AgentExecutor(                                         # Reinitialized agent executor
+        user_memories[msg.user_id] = {"memory": ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
+                                      "interaction_count" : 0}
+        memory = user_memories[msg.user_id]["memory"]
+        
+    agent_executor = AgentExecutor(                                         # Reinitialized agent executor
             agent=agent,
             tools=tools,
             verbose=True,
             return_intermediate_steps=True,
             memory=memory
         )
-        interaction_count = 0  # Reset counter
+        
 
     response = agent_executor.invoke({"input": msg.text})
-    interaction_count += 1  # Increase interaction count
+    user_memories[msg.user_id]["interaction_count"] += 1  # Increase interaction count
+
+    # Print logs of all connected users
+    print("\n--- Connected Users Log ---")
+    for user_id, details in connected_users.items():
+        print(f"User ID: {user_id}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
+    print("---------------------------\n")
     
     return {
         "response": response.get("output", "No response generated"),
