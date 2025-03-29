@@ -122,23 +122,18 @@ MAX_MEMORY_SIZE = 5  # Clear memory after 5 interactions
 def get_user_memory(user_id: str):
     if user_id not in user_memories:
         user_memories[user_id] = {
-            "memory": ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
-            "interaction_count": 0
+            "memory" : ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
+            "interaction_count" : 0
         }
+        # Logging User connection
+
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         connected_users[user_id] = {
-            "first_seen": now,
-            "last_active": now,
-            "total_messages": 0
+            "first_seen" : now,
+            "last_active" : now,
+            "total_messages" : 0
         }
-    
-    return user_memories[user_id]  # Ensure function always returns user memory
-
-import logging
-from fastapi import HTTPException
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+        return user_memories[user_id]
 
 @app.post("/chat")
 def chat_with_model(msg: Message):
@@ -150,38 +145,34 @@ def chat_with_model(msg: Message):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     connected_users[msg.user_id]["last_active"] = now
     connected_users[msg.user_id]["total_messages"] += 1
-
-    # Reset memory if interaction count exceeds threshold
+    
+    # Reset memory if it gets too large
     if interaction_count >= MAX_MEMORY_SIZE:
-        logger.info(f"Memory Reset for {msg.user_id}")
-        memory.chat_memory.clear()  # Clears stored history
-        user_memories[msg.user_id]["interaction_count"] = 0
+        print(f'Memory Reset for {msg.user_id}')
+        memory.clear()  # Clears stored history
+        user_memories[msg.user_id] = {"memory": ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
+                                      "interaction_count" : 0}
+        memory = user_memories[msg.user_id]["memory"]
+        
+    agent_executor = AgentExecutor(                                         # Reinitialized agent executor
+            agent=agent,
+            tools=tools,
+            verbose=True,
+            return_intermediate_steps=True,
+            memory=memory
+        )
+        
 
-    # Reinitialize agent executor
-    agent_executor = AgentExecutor(
-        agent=agent,
-        tools=tools,
-        verbose=True,
-        return_intermediate_steps=True,
-        memory=memory
-    )
-
-    try:
-        response = agent_executor.invoke({"input": msg.text})
-        output_text = response.get("output", "No response generated")
-    except Exception as e:
-        logger.error(f"Error during agent execution: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error while processing the request.")
-
+    response = agent_executor.invoke({"input": msg.text})
     user_memories[msg.user_id]["interaction_count"] += 1  # Increase interaction count
 
-    # Logging all connected users
-    logger.info("\n--- Connected Users Log ---")
+    # Print logs of all connected users
+    print("\n--- Connected Users Log ---")
     for user_id, details in connected_users.items():
-        logger.info(f"User ID: {user_id}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
-    logger.info("---------------------------\n")
-
+        print(f"User ID: {user_id}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
+    print("---------------------------\n")
+    
     return {
-        "response": output_text,
-        "intermediate_steps": response.get("intermediate_steps", []) if isinstance(response, dict) else []
+        "response": response.get("output", "No response generated"),
+        "intermediate_steps": response.get("intermediate_steps", [])
     }
