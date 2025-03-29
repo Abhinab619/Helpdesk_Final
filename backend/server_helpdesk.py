@@ -133,7 +133,12 @@ def get_user_memory(user_id: str):
             "last_active" : now,
             "total_messages" : 0
         }
-        return user_memories.get(user_id)
+    memory_data = user_memories.get(user_id)
+
+     # Debug print
+    print(f"Memory Data for User {user_id}: {memory_data}")
+    
+    return memory_data if memory_data is not None else {}
 
 @app.post("/chat")
 def chat_with_model(msg: Message):
