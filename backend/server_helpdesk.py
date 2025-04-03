@@ -168,13 +168,42 @@ def chat_with_model(msg: Message):
     remove_inactive_users()
     user_id = msg.user_id.strip() if msg.user_id else generate_user_id()
 
-    if user_id not in connected_users:  # New user check
+    # If user is not in the system, initialize them first
+    if user_id not in connected_users:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        connected_users[user_id] = {
+            "first_seen": now,
+            "last_active": now,
+            "total_messages": 0
+        }
+        user_memories[user_id] = {
+            "memory": ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
+            "interaction_count": 0
+        }
+
+
+        remove_inactive_users()
+
+        # If the user was removed after inactivity, reinitialize instead of rejecting them
+    if user_id not in connected_users:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        connected_users[user_id] = {
+            "first_seen": now,
+            "last_active": now,
+            "total_messages": 0
+        }
+        user_memories[user_id] = {
+            "memory": ConversationSummaryMemory(llm=chat, memory_key="chat_history", return_messages=True),
+            "interaction_count": 0
+        }
         return {
             "user_id": user_id,
-            "response": "Session inactive. Please start a new chat.",
+            "response": "Session inactive. A new session has been started.",
             "intermediate_steps": []
         }
-    user_data = get_user_memory(msg.user_id)
+    
+
+    user_data = get_user_memory(user_id)
     memory = user_data["memory"]
     interaction_count = user_data["interaction_count"]
 
