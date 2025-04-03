@@ -169,13 +169,11 @@ def chat_with_model(msg: Message):
     user_id = msg.user_id.strip() if msg.user_id else generate_user_id()
 
     if user_id not in connected_users:  # New user check
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        connected_users[user_id] = {
-            "first_seen": now,
-            "last_active": now,
-            "total_messages": 0
+        return {
+            "user_id": user_id,
+            "response": "Session inactive. Please start a new chat.",
+            "intermediate_steps": []
         }
-
     user_data = get_user_memory(msg.user_id)
     memory = user_data["memory"]
     interaction_count = user_data["interaction_count"]
@@ -239,6 +237,5 @@ Stores the backend-generated user_id to avoid conflicts."""
 #This user_id helps maintain conversation memory for personalized responses.
 
 #The backend removes inactive users after 5 minutes of inactivity.
-
 
 # see user handling page for more details
