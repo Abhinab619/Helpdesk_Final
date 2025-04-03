@@ -11,6 +11,8 @@ from langchain.agents import create_tool_calling_agent, AgentExecutor
 import os
 from langchain.memory import ConversationSummaryMemory      # Adding Memory for context Retention
 from datetime import datetime,timedelta
+import time
+import threading
 
 
 
@@ -34,8 +36,19 @@ import uuid
 def generate_user_id():
     return str(uuid.uuid4())  # Generates a unique user_id
 
+def periodic_cleanup():
+    while True:
+        remove_inactive_users()
+        time.sleep(60)
+
+
 
 app = FastAPI()
+
+@app.on_event("startup")
+def start_background_cleanup():
+    thread = threading.Thread(target=periodic_cleanup, daemon=True)
+    thread.start()
 
 # Allow frontend requests (adjust for production)
 app.add_middleware(
@@ -182,7 +195,6 @@ def chat_with_model(msg: Message):
         }
 
 
-        remove_inactive_users()
 
         # If the user was removed after inactivity, reinitialize instead of rejecting them
     if user_id not in connected_users:
