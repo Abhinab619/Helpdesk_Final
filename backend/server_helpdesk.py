@@ -10,6 +10,7 @@ from langchain import hub
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 import os
 from langchain.memory import ConversationSummaryMemory      # Adding Memory for context Retention
+<<<<<<< HEAD
 from datetime import datetime,timedelta
 import time
 import threading
@@ -42,6 +43,9 @@ def periodic_cleanup():
         time.sleep(60)
 
 
+=======
+from datetime import datetime
+>>>>>>> parent of d10495f (Version 0.2(User Handlind--Timeout--5mins))
 
 app = FastAPI()
 
@@ -178,6 +182,7 @@ def get_user_memory(user_id: str):
 
 @app.post("/chat")
 def chat_with_model(msg: Message):
+<<<<<<< HEAD
     remove_inactive_users()
     user_id = msg.user_id.strip() if msg.user_id else generate_user_id()
 
@@ -216,6 +221,9 @@ def chat_with_model(msg: Message):
     
 
     user_data = get_user_memory(user_id)
+=======
+    user_data = get_user_memory(msg.user_id)
+>>>>>>> parent of d10495f (Version 0.2(User Handlind--Timeout--5mins))
     memory = user_data["memory"]
     interaction_count = user_data["interaction_count"]
 
@@ -246,12 +254,11 @@ def chat_with_model(msg: Message):
 
     # Print logs of all connected users
     print("\n--- Connected Users Log ---")
-    for uid, details in connected_users.items():
-        print(f"User ID: {uid}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
+    for user_id, details in connected_users.items():
+        print(f"User ID: {user_id}, First Seen: {details['first_seen']}, Last Active: {details['last_active']}, Total Messages: {details['total_messages']}")
     print("---------------------------\n")
     
     return {
-        "user_id" : user_id,
         "response": response.get("output", "No response generated"),
         "intermediate_steps": response.get("intermediate_steps", [])
     }
@@ -259,20 +266,19 @@ def chat_with_model(msg: Message):
 
 
 
-# Version 0.2
+# Version 0.1 (User SPECIFIC basic session )
 
-""" Frontend Chnages:
-
-
-Uses localStorage to persist user_id.
-
-Sends an empty user_id initially, letting the backend generate it.
-
-Stores the backend-generated user_id to avoid conflicts."""
+# User-specific memory (user_memories)
+# ---A dictionary user_memories is used to store conversation memory for each user_id.
+# ---The dictionary connected_users tracks when a user was first seen, last active, and their total messages.
 
 
-#The frontend (React) checks for a stored user_id. If none exists, it sends null(enpty string) to the backend.
+# Also User ID is assigned manually here in this code, from the frontend,
+# which can cause conflicts(if name is same)
 
+
+
+<<<<<<< HEAD
 #The backend (FastAPI) either assigns a new user_id (if it's a new user) or uses the existing one.
 
 #This user_id helps maintain conversation memory for personalized responses.
@@ -280,3 +286,6 @@ Stores the backend-generated user_id to avoid conflicts."""
 #The backend removes inactive users after 5 minutes of inactivity.
 
 # see user handling page for more details
+=======
+# Version 0.2 will focus on Automatic user Handling, while maintaining some temporary storage
+>>>>>>> parent of d10495f (Version 0.2(User Handlind--Timeout--5mins))

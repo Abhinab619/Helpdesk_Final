@@ -1,16 +1,8 @@
-import { useState, useEffect } from "react"; //useEffect is added
+import { useState } from "react";
 
 export default function App() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
-  const [userId, setUserId] = useState(localStorage.getItem("user_id") || ""); //added
-
-  useEffect(() => {                                           // this function is added
-    const storedUserId = localStorage.getItem("user_id");     //
-    if (storedUserId) {                                       //
-      setUserId(storedUserId);                                //    
-    }                                                         //
-  }, []);                                                     //
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -21,15 +13,10 @@ export default function App() {
       const response = await fetch("https://helpdesk-final.onrender.com/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: message, user_id : userId }),              //changed
+        body: JSON.stringify({ text: message, user_id : "Abhinab" }),
       });
   
       const data = await response.json();
-
-      if (!userId) {                                                                      //added
-        setUserId(data.user_id);                                                          //added
-        localStorage.setItem("user_id", data.user_id); // Store it permanently            //added
-      }                                                                                   //
   
       setChat((prev) => [...prev, { text: data.response, sender: "bot" }]);
     } catch (error) {
