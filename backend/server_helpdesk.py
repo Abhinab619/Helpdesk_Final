@@ -16,7 +16,7 @@ import threading
 
  
 
-INACTIVITY_TIMEOUT = timedelta(minutes=1)  # Set timeout for removing inactive users
+INACTIVITY_TIMEOUT = timedelta(minutes=5)  # Set timeout for removing inactive users
 
 def remove_inactive_users():
     now = datetime.now()
@@ -259,7 +259,7 @@ def chat_with_model(msg: Message):
 
 
 
-# Version 0.2(added intermediate User Handling)
+# Version 0.2
 
 """ Frontend Chnages:
 
